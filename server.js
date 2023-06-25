@@ -171,18 +171,33 @@ function addEmployee() {
 
 // -- Function to update an employee role -- //
 function updateEmployeeRole() {
+    // - Fetch all employees from database - //
+connection.query('SELECT * FROM employee', (error, employees) => {
+    if (error) throw error;
+    // - Prompt user to select an employee to update - // 
     inquirer
-    .prompt({
-     name: 'employeeRole',
-     type: 'input',
-     message: 'Enter the role of the employee:',
-    })
+    .prompt([
+    {
+     name: 'employeeId',
+     type: 'list',
+     message: 'Select which employee to update:',
+     choices: employees.map((employee) => ({
+     name: `${employee.first_name} ${employee.last_name}`,
+     value: employee.id
+    })),
+},
+    // - Prompt user to enter new role ID for the chosen employee - //
+{
+    name: 'roleId',
+    type: 'number',
+    message: 'Enter the new role ID for the employee:',
+},
+])
     .then((answer) => {
+    // - Update the employee's role in the DB - //
      connection.query(
-         'INSERT INTO employeeRole SET ?',
-         {
-             name: answer.employeeRole,
-         },
+         'UPDATE employee SET role_id = ? WHERE id = ?',
+        [answer.roleId, answer.employeeId],
          (error) => {
              if (error) throw error;
              console.log('Employee role updated successfully!');
@@ -190,4 +205,5 @@ function updateEmployeeRole() {
          }
      );
     });
- }
+ });
+};
