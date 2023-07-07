@@ -1,6 +1,6 @@
 // -- Importing required dependencies -- //
 const inquirer = require("inquirer");
-const mysql = require("mysql");
+const mysql = require("mysql2");
 require("console.table");
 
 // -- Establishing MySQL connection -- //
@@ -10,14 +10,14 @@ host: 'localhost',
 // -- Setting PORT # -- //
 port: 3306,
 
-user: root,
+user: 'root',
 password: 'password',
-database: 'employees_db'
+database: 'company'
 });
 
 // -- Connecting to the database -- //
-connection.connect((error) => {
-    if (error) throw error;
+connection.connect((err) => {
+    if (err) throw err;
     console.log('Connected to the database.');
     start();
 });
@@ -75,8 +75,8 @@ function start() {
 
 // -- Function to view all roles -- //
 function viewRoles() {
-    connection.query('SELECT * FROM role', (err, res) => {
-        if (error) throw error;
+    connection.query('SELECT * FROM employee_role', (err, res) => {
+        if (err) throw err;
         console.table('Roles', res);
         start();
     });
@@ -85,7 +85,7 @@ function viewRoles() {
 // -- Function to view all departments -- //
 function viewDepartments() {
     connection.query('SELECT * FROM department', (err, res) => {
-        if (error) throw error;
+        if (err) throw error;
         console.table('Departments', res);
         start();
     });
@@ -94,7 +94,7 @@ function viewDepartments() {
 // -- Function to view all roles -- //
 function viewEmployees() {
     connection.query('SELECT * FROM employee', (err, res) => {
-        if (error) throw error;
+        if (err) throw err;
         console.table('Employees', res);
         start();
     });
@@ -114,8 +114,8 @@ function addDepartment() {
         {
             name: answer.department,
         },
-        (error) => {
-            if (error) throw error;
+        (err) => {
+            if (err) throw err;
             console.log('Department created successfully!');
             start();
         }
@@ -126,19 +126,30 @@ function addDepartment() {
 // -- Function to add a role -- //
 function addRole() {
     inquirer
-    .prompt({
-     name: 'role',
-     type: 'input',
-     message: 'Enter the name of the role:',
-    })
-    .then((answer) => {
+    .prompt([
+    {
+        name: 'title',
+        type: 'input',
+        message: 'Enter the title of the role:',
+    },
+    {
+        name: 'salary',
+        type: 'input',
+        message: 'Enter the salary for this role:',
+    },
+    {
+        name: 'department_id',
+        type: 'input',
+        message: 'Enter the department ID for the role:',
+    },
+])
+    .then((answers) => {
+        const { title, salary, department_id } = answers;
      connection.query(
-         'INSERT INTO role SET ?',
-         {
-             name: answer.role,
-         },
-         (error) => {
-             if (error) throw error;
+         'INSERT INTO employee_role (title, salary, department_id)VALUES (?, ?, ?)',
+         [title, salary, department_id],
+         (err) => {
+             if (err) throw err;
              console.log('Role created successfully!');
              start();
          }
@@ -149,19 +160,34 @@ function addRole() {
 // -- Function to add an employee -- //
 function addEmployee() {
     inquirer
-    .prompt({
-     name: 'employee',
+    .prompt([
+    {
+     name: 'first_name',
      type: 'input',
-     message: 'Enter the name of the employee:',
-    })
+     message: 'Enter the first name of the employee:',
+    },
+    {
+        name: 'last_name',
+        type: 'input',
+        message: 'Enter the last name of the employee:'
+    },
+    {
+        name: 'role_id',
+        type: 'input',
+        message: 'Enter the role ID of the employee:'
+    },
+    {
+        name: 'manager_id',
+        type: 'input',
+        message: 'Enter the manager ID of the employee (optional)'
+    },
+])
     .then((answer) => {
      connection.query(
-         'INSERT INTO employee SET ?',
-         {
-             name: answer.employee,
-         },
-         (error) => {
-             if (error) throw error;
+         'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)',
+            [answer.first_name, answer.last_name, answer.role_id, answer.manager_id],
+         (err) => {
+             if (err) throw err;
              console.log('Employee added successfully!');
              start();
          }
@@ -172,8 +198,8 @@ function addEmployee() {
 // -- Function to update an employee role -- //
 function updateEmployeeRole() {
     // - Fetch all employees from database - //
-connection.query('SELECT * FROM employee', (error, employees) => {
-    if (error) throw error;
+connection.query('SELECT * FROM employee', (err, employees) => {
+    if (err) throw err;
     // - Prompt user to select an employee to update - // 
     inquirer
     .prompt([
@@ -198,8 +224,8 @@ connection.query('SELECT * FROM employee', (error, employees) => {
      connection.query(
          'UPDATE employee SET role_id = ? WHERE id = ?',
         [answer.roleId, answer.employeeId],
-         (error) => {
-             if (error) throw error;
+         (err) => {
+             if (err) throw err;
              console.log('Employee role updated successfully!');
              start();
          }
